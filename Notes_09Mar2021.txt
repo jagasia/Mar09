@@ -99,12 +99,111 @@ by default, JDBC connections are in "AUTOCOMMIT" mode.	So every DML operation is
 
 4) execute the statement and get result
 	
-	new oracle.jdbc.driver.OracleDriver();
+		OracleDriver driver = new oracle.jdbc.driver.OracleDriver();
 		String url="jdbc:oracle:thin:@localhost:1522:XE";
 		String uid="sys as sysdba";
 		String pwd="password";
+		DriverManager.registerDriver(driver);
 		Connection con = DriverManager.getConnection(url, uid, pwd);
 		Statement st=con.createStatement();
 		ResultSet rs = st.executeQuery("SELECT * FROM EMPLOYEES");
 		while(rs.next())
 			System.out.println(rs.getString(1));
+		con.close();
+		DriverManager.deregisterDriver(driver);
+
+hint:
+	use System.out.format to display many columns from the table
+
+
+Some times, the program should not be hard coded with the driver. 
+		The java program must be independent of any RDBMS.
+		so we get the driver name as input from the user.
+		
+		String driverName="oracle.jdbc.driver.OracleDriver";
+		Class.forName(driverName);
+	
+
+Look at the Statement
+		Statement st=con.createStatement();
+	we are going to discuss this later.
+
+	st.execute()		//any sql statement but it does not return a value
+	st.executeQuery()	//returns ResultSet		(SELECT)
+	st.executeUpdate()	//returns noOfRowsAffected	(DML)
+
+
+
+Task:
+	Ask the user to choose from the choices:
+	1) Add Branch
+	2) Modify Branch
+	3) Remove Branch
+	4) Display all branches
+	5) Find Branch by Id
+	6) Exit
+
+hint:
+	for adding, use st.executeUpdate();	with "INSERT INTO..."
+
+import java.util.Scanner;
+
+public class Main_Branch {
+
+	public static void main(String[] args) {
+		Scanner sc=new Scanner(System.in);
+		String bid, bname, bcity;
+		do
+		{
+			System.out.println("	1) Add Branch\r\n" + 
+					"	2) Modify Branch\r\n" + 
+					"	3) Remove Branch\r\n" + 
+					"	4) Display all branches\r\n" + 
+					"	5) Find Branch by Id\r\n" + 
+					"	6) Exit");
+			int choice=sc.nextInt();
+			switch(choice)
+			{
+			case 1:		//add branch
+				System.out.println("Enter the branch id:");
+				bid=sc.next();
+				System.out.println("Enter the branch name:");
+				bname=sc.nextLine();
+				if(bname.equals(""))
+					bname=sc.nextLine();
+				System.out.println("Enter the branch location:");
+				bcity=sc.nextLine();
+				//write code to add branch
+				break;
+			case 2:		//modify branch
+				System.out.println("Enter the branch id:");
+				bid=sc.next();
+				System.out.println("Enter the branch name:");
+				bname=sc.nextLine();
+				if(bname.equals(""))
+					bname=sc.nextLine();
+				System.out.println("Enter the branch location:");
+				bcity=sc.nextLine();
+				//write code to update branch
+				break;
+			case 3:		//remove branch
+				System.out.println("Enter the branch id:");
+				bid=sc.next();
+				//write code to remove branch
+				break;
+			case 4:		
+				//write code to display all branches
+				break;
+			case 5:		//find branch by id
+				System.out.println("Enter the branch id:");
+				bid=sc.next();
+				//write code to find branch by id
+				break;
+			default:
+				System.exit(0);
+				break;
+			}
+		}while(true);
+	}
+
+}
