@@ -1,0 +1,110 @@
+Reminder:	Autocommit to false and explicitly commit or rollback based on the outcome of the transaction.
+Triggers
+NOCOPY
+	when a OUT parameter return LOB, then formal and actual paramters (2 copies of LOB) will be risky for memory considerations.
+	By using NOCOPY, only one copy of the LOB is maintained in the memory.
+
+f(x,y)
+
+f(2,3)	this is based on positional parameters
+f(y=>2, x=>3)	this is named parameters
+
+in sql developer, we right click a function and run. it generates a sample code that calls the function
+
+------------------------------------------------------------------------------
+Java and Oracle
+	Java programs are going to access the databases like Oracle, Mysql, etc...
+How is it possible?
+	Java language developed by Sun microsystems (adopted by Oracle corporation)
+
+	Database like MS Sql server (Microsoft), DB2 (IBM) are developed by different vendors.
+
+	How is it possible for a java program to influence a database?
+
+	Tomorrow, if we invent a new RDBMS, how can java access our (rdbms)project ?
+
+	It is possible only if our rdbms, have some methods advised by Java and those methods also written in java language.
+
+	Ok we agree to create some java code following the guideliness of Java.
+		That code is called as Driver
+
+	That java code creates lot of classes by implementing the interfaces defined in JDBC
+
+wHAT is JDBC?
+	Java DataBase Connectivity
+
+	this is an API	a part of JDK
+
+	packages		java.sql		and 	javax.sql
+
+	these packages define some interfaces, which are implemented by the Database Vendors
+
+	If any RDBMS vendor did not implement jdbc interfaces and did not release a driver, then java cannot access that database
+
+	Can java program, access oracle database?
+		there are oracle drivers for java, SO Yes. 
+	Can java program, access SQL server, DB2, mysql?		Yes....
+---------------
+steps to connect with a database and run sql queries
+	1) Load the driver
+		by creating an object of driver class		(driver is downloaded from database vendor portal)
+	2) connect with the database	(information required to connect are "url", "username", "password"
+	3) if we are able to represent the connection with db as an object, then that object is used to do all operations in the db (with the help of appropriate statements)
+	4) Statement objects are nothing but object representation of sql statements
+	5) execute the statements to 
+		get result
+		manipulate data
+	6) close the connection
+
+by default, JDBC connections are in "AUTOCOMMIT" mode.	So every DML operation is automatically committed when successful. They automatically ROLLBACK, when failed due to error.
+
+
+1) if we are not able to connect to oracle in sql developer using 
+		url, uid, pwd, port number,
+	then the same details will not work from java also.
+
+	host:	localhost
+	port:	1522
+	uid:	sys
+	pwd:	password
+	sid:	XE
+
+	jdbc:oracle:thin:@localhost:1522:XE
+		this is what we call it as url
+
+
+1) Load the driver
+	driver is a class created by db vendor. So we need that class. 
+	class is in jar file.
+	ojdbc8.jar
+		include this jar file into our project folder (src or bin?)
+		"src" will not be deployed to client machine. so put the jar in "bin" folder
+
+	i) copy the ojdbc8.jar file to the project bin folder
+	ii) now, this jar file should be added to the classpath (why?) 
+		whenever we create an object of a class (or) refer to a class or interface, the class is either present in jdk or created by me or it should be somewhere and its path should be mentioned in the class path.
+	to do this, follow the steps:
+		right click project -> properties -> Java Build path -> Libraries tab -> Add external jars button
+		locate the jar (inside your project)
+		Apply and close
+
+	iii) in our program, we create an object of "Driver" class
+		new oracle.jdbc.driver.OracleDriver();
+
+2) Establish connection with the RDBMS server:
+	Connection con = DriverManager.getConnection(url, uid, pwd);
+		
+3) create statement object	
+	Statement st=con.createStatement();
+
+4) execute the statement and get result
+	
+	new oracle.jdbc.driver.OracleDriver();
+		String url="jdbc:oracle:thin:@localhost:1522:XE";
+		String uid="sys as sysdba";
+		String pwd="password";
+		Connection con = DriverManager.getConnection(url, uid, pwd);
+		Statement st=con.createStatement();
+		ResultSet rs = st.executeQuery("SELECT * FROM EMPLOYEES");
+		while(rs.next())
+			System.out.println(rs.getString(1));
