@@ -336,3 +336,393 @@ public class Main_Branch {
 	}
 
 }
+
+------------------------------------------------------------------------
+Statement st = con.createStatement();
+		String sql=String.format("SELECT * FROM USER_MASTER WHERE USERID='%s' AND PASSWORD='%s'",username,password);
+
+anything' or 1=1 --
+abcd
+		
+we understood that the above code leads to sql injection.
+
+Solution is 	
+	Do not use Statement whenever a query uses parameters
+	do not use Statement, means? what else we can use?
+	use PreparedStatement
+
+
+	PreparedStatement st = con.prepareStatement("SELECT * FROM USER_MASTER WHERE USERID=? AND PASSWORD=?");
+
+	st.setString(1, username);
+	st.setString(2, password);
+	ResultSet rs = st.executeQuery();
+
+		--------------------------------------------------------------
+
+
+1) Statement			//for simple queries	(where condition can be there, but not when user enters)
+2) PreparedStatement		//for simple or parameterized queries (addresses sql injection)
+3) CallableStatement		//for calling stored procedures
+
+execute()
+executeQuery()
+executeUpdate()
+
+---------
+to display entire table, we should know what are the columns obtained by the result set.
+ResultSetMetaData rsmd = rs.getMetaData();
+		
+this ResultSetMetaData is used to get information about the result set like
+	column count
+	column name by index
+	column data type
+
+---------------------
+import java.sql.Connection;
+import java.sql.Driver;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.sql.Statement;
+
+
+public class Main_Metadata {
+
+	public static void main(String[] args) throws SQLException {
+		Driver driver=new oracle.jdbc.OracleDriver();
+		Connection con = DriverManager.getConnection("jdbc:oracle:thin:@localhost:1522:XE","sys as sysdba","password");
+		Statement st = con.createStatement();
+		ResultSet rs = st.executeQuery("SELECT * FROM Employees");
+		//this result set has a meta data
+		ResultSetMetaData rsmd = rs.getMetaData();
+		System.out.printf("There are %d column(s) in this table\n", rsmd.getColumnCount());
+		for(int i=1;i<=11;i++)
+		{
+			System.out.printf("%-10s\t",rsmd.getColumnName(i));
+		}
+		System.out.println();
+		while(rs.next())
+		{
+			for(int i=1;i<=11;i++)
+			{
+				System.out.printf("%-10s\t",rs.getString(i));
+			}
+			System.out.println();
+		}
+	}
+
+}
+------------------------------------------------
+the driver name
+the url, uid, pwd, port no
+
+these information can change at client's location
+
+so they should not be hard coded. Means, in java code, we should not see them.
+Lets keep them in a text file (properties file)
+
+so that the deployer can change the properties file (without recompiling the java code)
+
+1) create a properties file in your project.	How?
+	right click project create "File" and name it as something.properties
+		db.properties
+
+	the file must be present in src folder
+
+		we can give key value pair in properties file like
+	driver=oracle.jdbc.driver.OracleDriver
+	url=jdbc:oracle:thin:@localhost:1522:XE
+	username=sys as sysdba
+	password=password
+
+
+How to access a properties file from a java program?
+	use ResourceBundle
+
+look at the below example:
+		ResourceBundle rb = ResourceBundle.getBundle("db");
+		String driver, url, username, password;
+		driver=rb.getString("driver");
+		url=rb.getString("url");
+		username=rb.getString("username");
+		password=rb.getString("password");
+		
+		Class.forName(driver);
+		Connection con = DriverManager.getConnection(url,username,password);
+		ResultSet rs = con.createStatement()
+				.executeQuery("SELECT * FROM Branch");
+		while(rs.next())
+			System.out.println(rs.getString(1)+"\t"+rs.getString(2)+"\t"+rs.getString(3));
+	}
+
+
+---------------------mysql------
+	download jar file for mysql		mysql-connector-java-5.1.47.jar
+
+for mysql,
+	driver:		com.mysql.jdbc.Driver
+	url:		jdbc:mysql://localhost:3306/bank
+	username:	root
+	password:	
+
+---------------------------------------
+Task:
+	BranchDao
+		create
+		read
+		read(id)
+		update
+		delete
+
+--------------------------------
+A result set (ResultSet) that we obtain from a Statement/ PreparedStatement 
+	is read only
+	forward only	(NEXT)
+
+We can create Scrollable and Updatable ResultSet s
+
+how we create a result set? we create from a statement
+	con.createStatement();		//notice that we have not supplied any parameter here
+
+if we want to supply the parameters, 
+	we can supply the type of result set.
+Lets see the enumerations supported by the createStatement() method.
+
+Scrollable:	A scrollable result set allows navigation forward and backward
+	Scollable Sensitive/Insensitive
+Updatable:
+	Read only/ Updatable
+
+public Statement createStatement(int Type, int Mode);
+
+
+		Scanner sc=new Scanner(System.in);
+		Connection con = DriverManager.getConnection("jdbc:oracle:thin:@localhost:1522:XE","sys as sysdba","password");
+		Statement st = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+//		Statement st = con.createStatement(); //forward only, read only result set
+		ResultSet rs = st.executeQuery("SELECT * FROM Branch");
+		while(rs.next())
+			System.out.println(rs.getString(2));
+		System.out.println("Do you want to iterate in reverse?(y/n)");
+		String choice=sc.next();
+		if(!choice.equalsIgnoreCase("y"))
+			return;
+		System.out.println("Reversing...................................");
+		while(rs.previous())
+			System.out.println(rs.getString(2));
+
+
+In this above program, while the loop is iterating forward and waiting for user input, 
+another transaction has changed the data. But our transaction is not aware of that change. INSENSITIVE
+
+
+-----------------------CONCUR_UPDATABLE
+Scanner sc=new Scanner(System.in);
+		Driver driver=new oracle.jdbc.driver.OracleDriver();
+		Connection con = DriverManager.getConnection("jdbc:oracle:thin:@localhost:1522:XE","sys as sysdba","password");
+		Statement st = con.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_UPDATABLE);
+//		st.executeUpdate("INSERT INTO Branch VALUES('B00015','One another branch','Kolkata')");
+		ResultSet rs = st.executeQuery("SELECT bid, bname, bcity FROM Branch");
+		String input="";
+		int position=-1;
+		do
+		{
+			System.out.println("ENter the position");
+			position=sc.nextInt();
+			rs.absolute(position);
+			System.out.println("Enter the bname:");
+			String bname=sc.nextLine();
+			if(bname.equals(""))
+				bname=sc.nextLine();
+			rs.updateString(2, bname);
+			rs.updateRow();
+			System.out.println(rs.getString(2));
+		}while(position!=-1);
+
+
+In scrollable result set, we can
+	next
+	previous
+	absolute(position)
+	
+	check if 
+		before first
+		after last
+
+
+
+BranchDao
+	create
+	read
+	update
+	delete
+
+imagine if there is a global variable in this class which is ResulSet
+and other methods are updating the result set. We can reflect the changes into the database
+
+this is one approach good for assessment project. BEcause, only the records related
+to a test taker is visible and updated
+
+BranchDao
+	using prepared statement directly issues SQL statements into the database.
+	Here, everything is live. 
+	Transaction should be for minimal duration only. 
+
+Task:
+-----
+	create a java program that access Branch table
+	display records based on user input.
+	User input is the absolute position of the record
+
+
+-----------------------------------------------------------------------
+WHenever we create a Dao program, 
+we need to create the program independent of any type of project.
+Only in console application (java project) the input is obtained using Scanner and
+output is displayed using System.out.println
+
+In other type of projects, the input/output may be done using different techniques.
+So our DAO program should be independent.
+
+We need to follow some standards:
+Lets take an entity as example:
+
+Associate
+	associateId
+	firstName
+	lastName
+	dateOfJoining
+	gender
+	picture
+
+
+instead of having lot of parameters, lets have 1 paramter
+	create(Associate associate)
+	read()
+	read(Long associateId)
+	update(Associate)
+	delete(associateId)
+
+
+Whenever there is a class called Associate
+	mapped to a table called Associate,
+
+then Associate is an Entity class.
+
+	why?	In ER diagram, Associate was an entity. It became a table in DB
+		It became a class in Java.
+
+Entity Object mapped to a Entity Relation
+	Object Relational Mapping		(ORM)
+
+
+
+dd-MMM-yy	format, then oracle will accept this
+
+but in java, the date is by default very long format. can we convert date into string using simpledateformat
+
+-------------------------------------------------------------------------
+What is a Trigger?
+	Triggers are PLSQL programs that are executed in response to some event
+	we do not call triggers. 
+
+	Procedures are executed when we call them. But triggers cannot be called. They are called when an event occurs.
+
+	There are
+		System triggers		(system events like login, logout, etc)
+		Object triggers		(ex: when insert on a table)
+			i) row level
+			ii) statement level
+
+object trigger
+	example:
+		whenever a row is added to SALES table, an update should happen on PRODUCTS table
+
+PRODUCTS
+	PID	PNAME	DESC	PRICE	STOCK
+	1	PENCIL	WRITE	11	100
+
+SALES
+	we are adding a record, because 50 pencils are sold.
+
+in response to the add record in SALES,
+	an update happens in PRODUCTS table		to update the stock
+
+	
+we cannot remember to do this. so we use trigger to automatically do this.
+
+Before we go into critical examples, lets see how to create a trigger which fires automatically when a dml happens
+
+CREATE OR REPLACE TRIGGER TRGNAME
+BEFORE | AFTER | INSTEAD OF
+ON TABLE | VIEW NAME
+AS
+BEGIN
+END;
+
+ex1:
+	whenever a row is inserted into branch table, a trigger should display a message
+
+
+
+
+CREATE OR REPLACE TRIGGER trgDeb1
+AFTER INSERT ON PRODUCT
+BEGIN
+    DBMS_OUTPUT.PUT_LINE('trgDeb1: a row is added to Product table now at ');
+END;
+
+iN the above example, the trigger displays a message when a row is added to the product table
+
+A trigger can read the value proposed to add, 
+	the value going to be deleted or updated
+
+	This is possible with the help of magic tables 
+			:new
+			:old
+
+	When a new row is proposed to add, then the new values are present in :new
+	when a row is deleted, the old values are in :old
+	when a row is updated, then old and new both are there	:new :old
+
+ex:
+	if the price entered is >100, the trigger should reject that operation
+
+"NEW or OLD references not allowed in table level triggers"
+
+The trigger can be
+	Table level or
+	Row level
+
+The :new or :old magic tables work only in row level triggers only.
+
+Using these magic tables, you can get the values from the dml statement and use them for
+	corresponding chain operations
+
+
+--CREATE TABLE JAG_AUDIT
+--(
+--    USERNAME VARCHAR2(100),
+--    TIME1 DATE
+--);
+
+CREATE OR REPLACE TRIGGER TRGLOGIN AFTER LOGON ON DATABASE
+BEGIN
+    INSERT INTO JAG_AUDIT VALUES('DUMMY',SYSDATE);
+END;
+
+
+---------------------------------
+create a testing code for 
+	model.Associate 
+	dao impl we created today
+
+It should be a main method
+	1) Add Associate
+	2) Update Associate
+	3) Remove Associate
+	4) Display All Associates
+	5) Find Associate by Id
+	6) Exit
