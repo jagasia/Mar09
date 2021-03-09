@@ -207,3 +207,132 @@ public class Main_Branch {
 	}
 
 }
+
+
+-----------------FINAL SOLUTION----------------
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.Scanner;
+
+public class Main_Branch {
+
+	private static Connection getConn() throws ClassNotFoundException, SQLException
+	{
+		String driverName="oracle.jdbc.driver.OracleDriver";
+		Class.forName(driverName);
+		String url="jdbc:oracle:thin:@localhost:1522:XE";
+		String uid="sys as sysdba";
+		String pwd="password";
+//		DriverManager.registerDriver(driver);
+		Connection con = DriverManager.getConnection(url, uid, pwd);
+		return con;
+	}
+	public static void main(String[] args) throws ClassNotFoundException, SQLException {
+		Scanner sc=new Scanner(System.in);
+		String bid, bname, bcity, sql;
+		int no=0;
+		Connection con=null;
+		Statement st=null;
+		ResultSet rs=null;
+		do
+		{
+			System.out.println("	1) Add Branch\r\n" + 
+					"	2) Modify Branch\r\n" + 
+					"	3) Remove Branch\r\n" + 
+					"	4) Display all branches\r\n" + 
+					"	5) Find Branch by Id\r\n" + 
+					"	6) Exit");
+			int choice=sc.nextInt();
+			switch(choice)
+			{
+			case 1:		//add branch
+				System.out.println("Enter the branch id:");
+				bid=sc.next();
+				System.out.println("Enter the branch name:");
+				bname=sc.nextLine();
+				if(bname.equals(""))
+					bname=sc.nextLine();
+				System.out.println("Enter the branch location:");
+				bcity=sc.nextLine();
+				//write code to add branch
+				con = getConn();
+				st = con.createStatement();
+				sql=String.format("INSERT INTO Branch VALUES ('%s','%s','%s')", bid, bname, bcity);
+				System.out.println(sql);
+				no=st.executeUpdate(sql);
+				con.close();
+				System.out.println(no+" row(s) inserted");
+				break;
+			case 2:		//modify branch
+				System.out.println("Enter the branch id:");
+				bid=sc.next();
+				System.out.println("Enter the branch name:");
+				bname=sc.nextLine();
+				if(bname.equals(""))
+					bname=sc.nextLine();
+				System.out.println("Enter the branch location:");
+				bcity=sc.nextLine();
+				//write code to update branch
+				con = getConn();
+				st = con.createStatement();
+				sql=String.format("UPDATE Branch SET bname='%s', bcity='%s' WHERE bid='%s'", bname, bcity, bid);
+				System.out.println(sql);
+				no=st.executeUpdate(sql);
+				con.close();
+				System.out.println(no+" row(s) updated");
+				break;
+			case 3:		//remove branch
+				System.out.println("Enter the branch id:");
+				bid=sc.next();
+				//write code to remove branch
+				con = getConn();
+				st = con.createStatement();
+				sql=String.format("DELETE FROM Branch WHERE bid='%s'", bid);
+				System.out.println(sql);
+				no=st.executeUpdate(sql);
+				con.close();
+				System.out.println(no+" row(s) deleted");
+				break;
+			case 4:		
+				//write code to display all branches
+				con = getConn();
+				st = con.createStatement();
+				sql=String.format("SELECT * FROM Branch");
+				System.out.println(sql);
+				rs=st.executeQuery(sql);
+				
+				System.out.format("%6s\t%-40s\t%-20s\n","ID","Branch Name", "City");
+				while(rs.next())
+				{
+					System.out.format("%6s\t%-40s\t%-20s\n",rs.getString(1),rs.getString(2), rs.getString(3));
+				}
+				con.close();				
+				break;
+			case 5:		//find branch by id
+				System.out.println("Enter the branch id:");
+				bid=sc.next();
+				//write code to find branch by id
+				con = getConn();
+				st = con.createStatement();
+				sql=String.format("SELECT * FROM Branch WHERE bid='%s'",bid);
+				System.out.println(sql);
+				rs=st.executeQuery(sql);
+				
+				System.out.format("%6s\t%-40s\t%-20s\n","ID","Branch Name", "City");
+				while(rs.next())
+				{
+					System.out.format("%6s\t%-40s\t%-20s\n",rs.getString(1),rs.getString(2), rs.getString(3));
+				}
+				con.close();
+				break;
+			default:
+				System.exit(0);
+				break;
+			}
+		}while(true);
+	}
+
+}
