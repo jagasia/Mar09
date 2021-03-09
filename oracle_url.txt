@@ -1,0 +1,6 @@
+ORACLE	oracle.jdbc.driver.OracleDriver	jdbc:oracle:thin:@hostname:port Number:databaseName
+
+
+DriverManager.getConnection("jdbc:oracle:thin:@localhost:1521:XE", "hr", "hr");
+
+DriverManager.getConnection("jdbc:oracle:thin:@10.10.21.200:1521:orcl","scott","tiger");
